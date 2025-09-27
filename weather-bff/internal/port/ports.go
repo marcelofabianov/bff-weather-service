@@ -14,3 +14,7 @@ type BffService interface {
 type WeatherServiceClient interface {
 	GetWeatherForCep(ctx context.Context, cep string) (*http.Response, error)
 }
+
+type Validator interface {
+	Validate(data any) error
+}

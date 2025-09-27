@@ -9,16 +9,15 @@ import (
 
 	"github.com/marcelofabianov/weather-bff/internal/model"
 	"github.com/marcelofabianov/weather-bff/internal/port"
-	"github.com/marcelofabianov/weather-bff/pkg/validator"
 	"github.com/marcelofabianov/weather-bff/pkg/web"
 )
 
 type ZipcodeHandler struct {
 	service   port.BffService
-	validator *validator.Validator
+	validator port.Validator
 }
 
-func NewZipcodeHandler(service port.BffService, validator *validator.Validator) *ZipcodeHandler {
+func NewZipcodeHandler(service port.BffService, validator port.Validator) *ZipcodeHandler {
 	return &ZipcodeHandler{
 		service:   service,
 		validator: validator,

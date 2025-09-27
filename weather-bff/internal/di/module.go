@@ -37,10 +37,6 @@ var LoggerModule = fx.Module("logger",
 	fx.Provide(logger.NewSlogLogger),
 )
 
-var UtilsModule = fx.Module("utils",
-	fx.Provide(validator.NewValidator),
-)
-
 var AdaptersModule = fx.Module("adapters",
 	fx.Provide(
 		fx.Annotate(
@@ -67,5 +63,14 @@ var WebServerModule = fx.Module("webserver",
 	fx.Provide(
 		web.NewRouter,
 		web.NewServer,
+	),
+)
+
+var UtilsModule = fx.Module("utils",
+	fx.Provide(
+		fx.Annotate(
+			validator.NewValidator,
+			fx.As(new(port.Validator)),
+		),
 	),
 )
