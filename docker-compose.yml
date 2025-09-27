@@ -9,6 +9,8 @@ services:
       - weather-net
     depends_on:
       - weather-service
+    env_file:
+      - ./weather-bff/.env
 
   weather-service:
     build:
@@ -16,6 +18,8 @@ services:
     container_name: weather-service
     networks:
       - weather-net
+    env_file:
+      - ./weather-service/.env
 
 networks:
   weather-net:
