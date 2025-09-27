@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/httprate"
+	"github.com/riandyrn/otelchi"
 
 	"github.com/marcelofabianov/weather-bff/config"
 )
@@ -31,6 +32,7 @@ func NewRouter(cfg *config.ServerConfig, logger *slog.Logger) *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
+	r.Use(otelchi.Middleware("weather-bff", otelchi.WithChiRoutes(r)))
 	r.Use(SlogLoggerMiddleware(logger))
 	r.Use(httprate.Limit(
 		cfg.API.RateLimit,
