@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"github.com/jpillora/backoff"
 	"github.com/marcelofabianov/fault"
 	"github.com/sony/gobreaker"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/marcelofabianov/weather-server/config"
 )
@@ -24,6 +26,7 @@ type WeatherApiResponse struct {
 type WeatherApiClient struct {
 	BaseURL    string
 	ApiKey     string
+	client     *http.Client
 	breaker    *gobreaker.CircuitBreaker
 	resilience *config.ResilienceConfig
 	logger     *slog.Logger
@@ -36,15 +39,18 @@ func NewWeatherApiClient(
 	logger *slog.Logger,
 ) *WeatherApiClient {
 	return &WeatherApiClient{
-		BaseURL:    clientCfg.URL,
-		ApiKey:     clientCfg.Key,
+		BaseURL: clientCfg.URL,
+		ApiKey:  clientCfg.Key,
+		client: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 		breaker:    breaker,
 		resilience: resilienceCfg,
 		logger:     logger.With("adapter", "weatherapi_client"),
 	}
 }
 
-func (c *WeatherApiClient) GetTemperature(city string) (float64, error) {
+func (c *WeatherApiClient) GetTemperature(ctx context.Context, city string) (float64, error) {
 	body, err := c.breaker.Execute(func() (interface{}, error) {
 		b := &backoff.Backoff{
 			Min:    c.resilience.RetryInitialBackoff,
@@ -57,7 +63,12 @@ func (c *WeatherApiClient) GetTemperature(city string) (float64, error) {
 		for i := 0; i < c.resilience.RetryMaxAttempts; i++ {
 			encodedCity := url.QueryEscape(city)
 			requestURL := fmt.Sprintf("%s/current.json?key=%s&q=%s", c.BaseURL, c.ApiKey, encodedCity)
-			resp, err := http.Get(requestURL)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
+			if err != nil {
+				return nil, fault.Wrap(err, ErrExternalAPICall.Message, fault.WithCode(ErrExternalAPICall.Code))
+			}
+
+			resp, err := c.client.Do(req)
 
 			if err != nil {
 				lastErr = fault.Wrap(err, ErrExternalAPICall.Message, fault.WithCode(ErrExternalAPICall.Code), fault.WithContext("url", requestURL))

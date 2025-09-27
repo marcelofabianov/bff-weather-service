@@ -11,6 +11,7 @@ import (
 	"github.com/marcelofabianov/fault"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/marcelofabianov/weather-bff/internal/model"
 )
@@ -39,7 +40,8 @@ func (m *MockValidator) Validate(data any) error {
 func TestZipcodeHandler_HandleCep(t *testing.T) {
 	mockService := new(MockBffService)
 	mockValidator := new(MockValidator)
-	handler := NewZipcodeHandler(mockService, mockValidator)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	handler := NewZipcodeHandler(mockService, mockValidator, tracer)
 	router := chi.NewMux()
 	handler.RegisterRoutes(router)
 
