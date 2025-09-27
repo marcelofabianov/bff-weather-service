@@ -21,6 +21,14 @@ services:
     env_file:
       - ./weather-service/.env
 
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - weather-net
+
 networks:
   weather-net:
     driver: bridge
