@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/marcelofabianov/weather-bff/config"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type WeatherServiceClient struct {
@@ -18,7 +19,8 @@ func NewWeatherServiceClient(cfg *config.WeatherServiceConfig) *WeatherServiceCl
 	return &WeatherServiceClient{
 		BaseURL: cfg.URL,
 		client: &http.Client{
-			Timeout: 2 * time.Second,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Timeout:   2 * time.Second,
 		},
 	}
 }
