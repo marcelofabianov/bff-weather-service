@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+    image: marcelofabianov/weather-api
+    container_name: weather-api
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    networks:
+      - weather-net
+
+networks:
+  weather-net:
+    driver: bridge
