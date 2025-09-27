@@ -152,8 +152,8 @@ var AdaptersModule = fx.Module("adapters",
 			fx.As(new(port.ViaCepClient)),
 		),
 		fx.Annotate(
-			func(breaker *gobreaker.CircuitBreaker, clientCfg *config.WeatherAPIConfig, resilienceCfg *config.ResilienceConfig, logger *slog.Logger) *adapter.WeatherApiClient {
-				return adapter.NewWeatherApiClient(clientCfg, breaker, resilienceCfg, logger)
+			func(breaker *gobreaker.CircuitBreaker, clientCfg *config.WeatherAPIConfig, resilienceCfg *config.ResilienceConfig, logger *slog.Logger, tracer trace.Tracer) *adapter.WeatherApiClient {
+				return adapter.NewWeatherApiClient(clientCfg, breaker, resilienceCfg, logger, tracer)
 			},
 			fx.ParamTags(`name:"weatherApiBreaker"`),
 			fx.As(new(port.WeatherApiClient)),

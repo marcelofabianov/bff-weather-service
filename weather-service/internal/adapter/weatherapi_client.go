@@ -13,6 +13,8 @@ import (
 	"github.com/marcelofabianov/fault"
 	"github.com/sony/gobreaker"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/marcelofabianov/weather-server/config"
 )
@@ -30,6 +32,7 @@ type WeatherApiClient struct {
 	breaker    *gobreaker.CircuitBreaker
 	resilience *config.ResilienceConfig
 	logger     *slog.Logger
+	tracer     trace.Tracer
 }
 
 func NewWeatherApiClient(
@@ -37,6 +40,7 @@ func NewWeatherApiClient(
 	breaker *gobreaker.CircuitBreaker,
 	resilienceCfg *config.ResilienceConfig,
 	logger *slog.Logger,
+	tracer trace.Tracer,
 ) *WeatherApiClient {
 	return &WeatherApiClient{
 		BaseURL: clientCfg.URL,
@@ -47,10 +51,16 @@ func NewWeatherApiClient(
 		breaker:    breaker,
 		resilience: resilienceCfg,
 		logger:     logger.With("adapter", "weatherapi_client"),
+		tracer:     tracer,
 	}
 }
 
 func (c *WeatherApiClient) GetTemperature(ctx context.Context, city string) (float64, error) {
+	ctx, span := c.tracer.Start(ctx, "weather_api_request")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("city", city))
+
 	body, err := c.breaker.Execute(func() (interface{}, error) {
 		b := &backoff.Backoff{
 			Min:    c.resilience.RetryInitialBackoff,
@@ -73,6 +83,7 @@ func (c *WeatherApiClient) GetTemperature(ctx context.Context, city string) (flo
 			if err != nil {
 				lastErr = fault.Wrap(err, ErrExternalAPICall.Message, fault.WithCode(ErrExternalAPICall.Code), fault.WithContext("url", requestURL))
 			} else {
+				span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 				if resp.StatusCode == http.StatusOK {
 					var data WeatherApiResponse
 					if err := json.NewDecoder(resp.Body).Decode(&data); err == nil {
