@@ -1,10 +1,6 @@
 package di
 
 import (
-	"log/slog"
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
 	"go.uber.org/fx"
 
 	"github.com/marcelofabianov/weather-bff/config"
@@ -69,11 +65,7 @@ var HandlersModule = fx.Module("handlers",
 
 var WebServerModule = fx.Module("webserver",
 	fx.Provide(
-		func(cfg *config.ServerConfig, logger *slog.Logger) *chi.Mux {
-			return web.NewRouter(cfg, logger)
-		},
-		func(cfg *config.Config, logger *slog.Logger, router *chi.Mux) *http.Server {
-			return web.NewServer(cfg, logger, router)
-		},
+		web.NewRouter,
+		web.NewServer,
 	),
 )
