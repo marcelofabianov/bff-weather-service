@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
@@ -98,6 +99,9 @@ var OtelModule = fx.Module("otel",
 
 		return tracerProvider, nil
 	}),
+	fx.Provide(func(tp *tracesdk.TracerProvider) trace.Tracer {
+		return tp.Tracer("github.com/marcelofabianov/weather-server")
+	}),
 )
 
 var LoggerModule = fx.Module("logger",
@@ -141,8 +145,8 @@ var AdaptersModule = fx.Module("adapters",
 	),
 	fx.Provide(
 		fx.Annotate(
-			func(breaker *gobreaker.CircuitBreaker, resilienceCfg *config.ResilienceConfig, logger *slog.Logger) *adapter.ViaCepClient {
-				return adapter.NewViaCepClient(breaker, resilienceCfg, logger)
+			func(breaker *gobreaker.CircuitBreaker, resilienceCfg *config.ResilienceConfig, logger *slog.Logger, tracer trace.Tracer) *adapter.ViaCepClient {
+				return adapter.NewViaCepClient(breaker, resilienceCfg, logger, tracer)
 			},
 			fx.ParamTags(`name:"viaCepBreaker"`),
 			fx.As(new(port.ViaCepClient)),
