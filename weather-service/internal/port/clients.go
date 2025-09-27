@@ -1,9 +1,11 @@
 package port
 
+import "context"
+
 type ViaCepClient interface {
-	GetLocation(zipcode string) (string, error)
+	GetLocation(ctx context.Context, zipcode string) (string, error)
 }
 
 type WeatherApiClient interface {
-	GetTemperature(city string) (float64, error)
+	GetTemperature(ctx context.Context, city string) (float64, error)
 }

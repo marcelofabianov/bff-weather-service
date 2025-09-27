@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -10,6 +11,9 @@ import (
 	"github.com/jpillora/backoff"
 	"github.com/marcelofabianov/fault"
 	"github.com/sony/gobreaker"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/marcelofabianov/weather-server/config"
 )
@@ -21,25 +25,37 @@ type ViaCepResponse struct {
 
 type ViaCepClient struct {
 	BaseURL    string
+	client     *http.Client
 	breaker    *gobreaker.CircuitBreaker
 	resilience *config.ResilienceConfig
 	logger     *slog.Logger
+	tracer     trace.Tracer
 }
 
 func NewViaCepClient(
 	breaker *gobreaker.CircuitBreaker,
 	resilienceCfg *config.ResilienceConfig,
 	logger *slog.Logger,
+	tracer trace.Tracer,
 ) *ViaCepClient {
 	return &ViaCepClient{
-		BaseURL:    "https://viacep.com.br/ws",
+		BaseURL: "https://viacep.com.br/ws",
+		client: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 		breaker:    breaker,
 		resilience: resilienceCfg,
 		logger:     logger.With("adapter", "viacep_client"),
+		tracer:     tracer,
 	}
 }
 
-func (c *ViaCepClient) GetLocation(zipcode string) (string, error) {
+func (c *ViaCepClient) GetLocation(ctx context.Context, zipcode string) (string, error) {
+	ctx, span := c.tracer.Start(ctx, "via_cep_request")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("cep", zipcode))
+
 	body, err := c.breaker.Execute(func() (interface{}, error) {
 		b := &backoff.Backoff{
 			Min:    c.resilience.RetryInitialBackoff,
@@ -51,11 +67,17 @@ func (c *ViaCepClient) GetLocation(zipcode string) (string, error) {
 
 		for i := 0; i < c.resilience.RetryMaxAttempts; i++ {
 			requestURL := fmt.Sprintf("%s/%s/json/", c.BaseURL, zipcode)
-			resp, err := http.Get(requestURL)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
+			if err != nil {
+				return nil, fault.Wrap(err, ErrExternalAPICall.Message, fault.WithCode(ErrExternalAPICall.Code))
+			}
+
+			resp, err := c.client.Do(req)
 
 			if err != nil {
 				lastErr = fault.Wrap(err, ErrExternalAPICall.Message, fault.WithCode(ErrExternalAPICall.Code), fault.WithContext("url", requestURL))
 			} else {
+				span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 				if resp.StatusCode == http.StatusOK {
 					var data ViaCepResponse
 					if err := json.NewDecoder(resp.Body).Decode(&data); err == nil {
