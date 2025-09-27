@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/marcelofabianov/fault"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/marcelofabianov/weather-bff/internal/model"
 	"github.com/marcelofabianov/weather-bff/internal/port"
@@ -15,16 +17,21 @@ import (
 type ZipcodeHandler struct {
 	service   port.BffService
 	validator port.Validator
+	tracer    trace.Tracer
 }
 
-func NewZipcodeHandler(service port.BffService, validator port.Validator) *ZipcodeHandler {
+func NewZipcodeHandler(service port.BffService, validator port.Validator, tracer trace.Tracer) *ZipcodeHandler {
 	return &ZipcodeHandler{
 		service:   service,
 		validator: validator,
+		tracer:    tracer,
 	}
 }
 
 func (h *ZipcodeHandler) HandleCep(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "ZipcodeHandler.HandleCep")
+	defer span.End()
+
 	var input model.CepInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		web.Error(w, r, fault.New("bad request: invalid json body", fault.WithCode(fault.Invalid)))
@@ -36,7 +43,9 @@ func (h *ZipcodeHandler) HandleCep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	weather, err := h.service.GetWeather(r.Context(), input.Cep)
+	span.SetAttributes(attribute.String("cep", input.Cep))
+
+	weather, err := h.service.GetWeather(ctx, input.Cep)
 	if err != nil {
 		web.Error(w, r, err)
 		return

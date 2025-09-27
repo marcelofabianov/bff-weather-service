@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
@@ -92,6 +93,9 @@ var OtelModule = fx.Module("otel",
 		})
 
 		return tracerProvider, nil
+	}),
+	fx.Provide(func(tp *tracesdk.TracerProvider) trace.Tracer {
+		return tp.Tracer("github.com/marcelofabianov/weather-bff")
 	}),
 )
 
