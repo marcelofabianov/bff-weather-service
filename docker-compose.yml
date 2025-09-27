@@ -29,6 +29,19 @@ services:
     networks:
       - weather-net
 
+  otel-collector:
+    image: otel/opentelemetry-collector
+    container_name: otel-collector
+    command: ["--config=/etc/otel-config.yaml"]
+    volumes:
+      - ./otel-config.yaml:/etc/otel-config.yaml
+    ports:
+      - "4317:4317"  # OTLP gRPC
+    networks:
+      - weather-net
+    depends_on:
+      - zipkin
+
 networks:
   weather-net:
     driver: bridge
