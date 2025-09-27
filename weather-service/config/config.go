@@ -13,6 +13,12 @@ type Config struct {
 	Server     ServerConfig     `mapstructure:"server"`
 	Resilience ResilienceConfig `mapstructure:"resilience"`
 	Clients    ClientsConfig    `mapstructure:"clients"`
+	OTEL       OTELConfig       `mapstructure:"otel"`
+}
+
+type OTELConfig struct {
+	ServiceName          string `mapstructure:"service_name"`
+	ExporterOTLPEndpoint string `mapstructure:"exporter_otlp_endpoint"`
 }
 
 type GeneralConfig struct {
@@ -66,6 +72,10 @@ type ClientsConfig struct {
 
 func LoadConfig(path string) (*Config, error) {
 	v := viper.New()
+
+	// OTEL
+	v.SetDefault("otel.service_name", "weather-service")
+	v.SetDefault("otel.exporter_otlp_endpoint", "otel-collector:4317")
 
 	// General
 	v.SetDefault("general.env", "development")

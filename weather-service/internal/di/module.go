@@ -1,12 +1,22 @@
 package di
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sony/gobreaker"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.uber.org/fx"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/marcelofabianov/weather-server/config"
 	"github.com/marcelofabianov/weather-server/internal/adapter"
@@ -20,6 +30,7 @@ import (
 var AppModule = fx.Options(
 	ConfigModule,
 	LoggerModule,
+	OtelModule,
 	AdaptersModule,
 	CoreModule,
 	HandlersModule,
@@ -35,8 +46,58 @@ var ConfigModule = fx.Module("config",
 		func(cfg *config.Config) *config.ServerConfig { return &cfg.Server },
 		func(cfg *config.Config) *config.ResilienceConfig { return &cfg.Resilience },
 		func(cfg *config.Config) *config.ClientsConfig { return &cfg.Clients },
+		func(cfg *config.Config) *config.OTELConfig { return &cfg.OTEL },
 		func(clientsCfg *config.ClientsConfig) *config.WeatherAPIConfig { return &clientsCfg.WeatherAPI },
 	),
+)
+
+var OtelModule = fx.Module("otel",
+	fx.Provide(func(lc fx.Lifecycle, cfg *config.OTELConfig) (*tracesdk.TracerProvider, error) {
+		ctx := context.Background()
+
+		res, err := resource.New(ctx,
+			resource.WithAttributes(
+				semconv.ServiceNameKey.String(cfg.ServiceName),
+				semconv.ServiceVersionKey.String("1.0.0"),
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+
+		conn, err := grpc.NewClient(cfg.ExporterOTLPEndpoint,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+		if err != nil {
+			return nil, err
+		}
+
+		bsp := tracesdk.NewBatchSpanProcessor(traceExporter)
+		tracerProvider := tracesdk.NewTracerProvider(
+			tracesdk.WithSampler(tracesdk.AlwaysSample()),
+			tracesdk.WithResource(res),
+			tracesdk.WithSpanProcessor(bsp),
+		)
+
+		otel.SetTracerProvider(tracerProvider)
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+		lc.Append(fx.Hook{
+			OnStop: func(ctx context.Context) error {
+				return tracerProvider.Shutdown(ctx)
+			},
+		})
+
+		return tracerProvider, nil
+	}),
 )
 
 var LoggerModule = fx.Module("logger",
