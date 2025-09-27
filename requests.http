@@ -1,0 +1,57 @@
+### Variáveis de Ambiente para os Serviços
+@bff_host = http://localhost:8081
+@service_host = http://localhost:8080
+
+
+##################################################
+#          Requisições para o weather-bff (Serviço A)
+#
+# Ponto de entrada público do sistema.
+##################################################
+
+### [BFF] Requisição com Sucesso (CEP Válido)
+POST {{bff_host}}/weather
+Content-Type: application/json
+
+{
+  "cep": "01001000"
+}
+
+### Separador
+###
+
+### [BFF] Requisição com CEP Inválido (Erro 422)
+# O BFF deve validar o formato e barrar a requisição.
+POST {{bff_host}}/weather
+Content-Type: application/json
+
+{
+  "cep": "123"
+}
+
+### Separador
+###
+
+### [BFF] Requisição com CEP Não Encontrado (Erro 404)
+# O BFF deve repassar o erro 404 retornado pelo weather-service.
+POST {{bff_host}}/weather
+Content-Type: application/json
+
+{
+  "cep": "99999999"
+}
+
+### Separador
+###
+
+### [BFF] Requisição com JSON Mal Formado (Erro 400)
+# O BFF deve retornar um erro de "bad request".
+POST {{bff_host}}/weather
+Content-Type: application/json
+
+{
+  "cep": "01001000"
+}
+
+##################################################
+
