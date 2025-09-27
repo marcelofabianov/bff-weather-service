@@ -1,7 +1,10 @@
 package port
 
-import "github.com/marcelofabianov/weather-server/internal/model"
+import (
+	"context"
+	"github.com/marcelofabianov/weather-server/internal/model"
+)
 
 type WeatherService interface {
-	GetWeatherByZipcode(zipcode string) (*model.Weather, error)
+	GetWeatherByZipcode(ctx context.Context, zipcode string) (*model.Weather, error)
 }
