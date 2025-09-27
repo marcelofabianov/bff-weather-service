@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/marcelofabianov/weather-server/internal/model"
 	"github.com/marcelofabianov/weather-server/internal/service"
@@ -18,8 +20,8 @@ type MockWeatherService struct {
 	mock.Mock
 }
 
-func (m *MockWeatherService) GetWeatherByZipcode(zipcode string) (*model.Weather, error) {
-	args := m.Called(zipcode)
+func (m *MockWeatherService) GetWeatherByZipcode(ctx context.Context, zipcode string) (*model.Weather, error) {
+	args := m.Called(ctx, zipcode)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -29,12 +31,13 @@ func (m *MockWeatherService) GetWeatherByZipcode(zipcode string) (*model.Weather
 func TestWeatherHandler_GetWeather(t *testing.T) {
 	t.Run("should return 200 OK with weather data on success", func(t *testing.T) {
 		mockService := new(MockWeatherService)
-		handler := NewWeatherHandler(mockService)
+		tracer := trace.NewNoopTracerProvider().Tracer("test")
+		handler := NewWeatherHandler(mockService, tracer)
 		router := chi.NewMux()
 		handler.RegisterRoutes(router)
 
 		expectedWeather := model.NewWeather("Goiânia", 25.0)
-		mockService.On("GetWeatherByZipcode", "74305460").Return(expectedWeather, nil).Once()
+		mockService.On("GetWeatherByZipcode", mock.Anything, "74305460").Return(expectedWeather, nil).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/weather/74305460", nil)
 		rr := httptest.NewRecorder()
@@ -48,11 +51,12 @@ func TestWeatherHandler_GetWeather(t *testing.T) {
 
 	t.Run("should return 422 Unprocessable Entity for invalid zipcode", func(t *testing.T) {
 		mockService := new(MockWeatherService)
-		handler := NewWeatherHandler(mockService)
+		tracer := trace.NewNoopTracerProvider().Tracer("test")
+		handler := NewWeatherHandler(mockService, tracer)
 		router := chi.NewMux()
 		handler.RegisterRoutes(router)
 
-		mockService.On("GetWeatherByZipcode", "123").Return(nil, service.ErrInvalidZipcode).Once()
+		mockService.On("GetWeatherByZipcode", mock.Anything, "123").Return(nil, service.ErrInvalidZipcode).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/weather/123", nil)
 		rr := httptest.NewRecorder()
@@ -66,11 +70,12 @@ func TestWeatherHandler_GetWeather(t *testing.T) {
 
 	t.Run("should return 404 Not Found when zipcode is not found", func(t *testing.T) {
 		mockService := new(MockWeatherService)
-		handler := NewWeatherHandler(mockService)
+		tracer := trace.NewNoopTracerProvider().Tracer("test")
+		handler := NewWeatherHandler(mockService, tracer)
 		router := chi.NewMux()
 		handler.RegisterRoutes(router)
 
-		mockService.On("GetWeatherByZipcode", "00000000").Return(nil, service.ErrZipcodeNotFound).Once()
+		mockService.On("GetWeatherByZipcode", mock.Anything, "00000000").Return(nil, service.ErrZipcodeNotFound).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/weather/00000000", nil)
 		rr := httptest.NewRecorder()
@@ -84,12 +89,13 @@ func TestWeatherHandler_GetWeather(t *testing.T) {
 
 	t.Run("should return 500 Internal Server Error for other errors", func(t *testing.T) {
 		mockService := new(MockWeatherService)
-		handler := NewWeatherHandler(mockService)
+		tracer := trace.NewNoopTracerProvider().Tracer("test")
+		handler := NewWeatherHandler(mockService, tracer)
 		router := chi.NewMux()
 		handler.RegisterRoutes(router)
 
 		genericError := errors.New("unexpected database error")
-		mockService.On("GetWeatherByZipcode", "11111111").Return(nil, genericError).Once()
+		mockService.On("GetWeatherByZipcode", mock.Anything, "11111111").Return(nil, genericError).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/weather/11111111", nil)
 		rr := httptest.NewRecorder()
