@@ -20,12 +20,12 @@ type ServerConfig struct {
 	Port int `mapstructure:"port"`
 }
 
-type ServiceBConfig struct {
+type WeatherServiceConfig struct {
 	URL string `mapstructure:"url"`
 }
 
 type ClientsConfig struct {
-	ServiceB ServiceBConfig `mapstructure:"serviceb"`
+	WeatherService WeatherServiceConfig `mapstructure:"weatherservice"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -33,7 +33,8 @@ func LoadConfig() (*Config, error) {
 
 	v.SetDefault("logger.level", "info")
 	v.SetDefault("server.port", 8080)
-	v.SetDefault("clients.serviceb.url", "http://localhost:8080")
+
+	v.SetDefault("clients.weatherservice.url", "http://weather-service:8080")
 
 	v.SetEnvPrefix("APP")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

@@ -1,5 +1,5 @@
 services:
-  bff:
+  weather-bff:
     build:
       context: ./weather-bff
     container_name: weather-bff
@@ -8,9 +8,9 @@ services:
     networks:
       - weather-net
     depends_on:
-      - service
+      - weather-service
 
-  service:
+  weather-service:
     build:
       context: ./weather-service
     container_name: weather-service
