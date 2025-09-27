@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/marcelofabianov/weather-bff/config"
 )
@@ -16,7 +17,9 @@ type WeatherServiceClient struct {
 func NewWeatherServiceClient(cfg *config.WeatherServiceConfig) *WeatherServiceClient {
 	return &WeatherServiceClient{
 		BaseURL: cfg.URL,
-		client:  &http.Client{},
+		client: &http.Client{
+			Timeout: 2 * time.Second,
+		},
 	}
 }
 
