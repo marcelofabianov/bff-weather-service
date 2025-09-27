@@ -1,4 +1,4 @@
-module github.com/marcelofabianov/weather-api
+module github.com/marcelofabianov/weather-server
 
 go 1.25.1
 

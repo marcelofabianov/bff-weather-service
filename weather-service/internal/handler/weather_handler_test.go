@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/marcelofabianov/weather-api/internal/model"
-	"github.com/marcelofabianov/weather-api/internal/service"
+	"github.com/marcelofabianov/weather-server/internal/model"
+	"github.com/marcelofabianov/weather-server/internal/service"
 )
 
 type MockWeatherService struct {

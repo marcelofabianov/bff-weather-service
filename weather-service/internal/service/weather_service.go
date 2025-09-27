@@ -5,8 +5,8 @@ import (
 
 	"github.com/marcelofabianov/fault"
 
-	"github.com/marcelofabianov/weather-api/internal/model"
-	"github.com/marcelofabianov/weather-api/internal/port"
+	"github.com/marcelofabianov/weather-server/internal/model"
+	"github.com/marcelofabianov/weather-server/internal/port"
 )
 
 var (

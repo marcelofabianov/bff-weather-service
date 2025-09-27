@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/marcelofabianov/weather-api/internal/port"
-	"github.com/marcelofabianov/weather-api/pkg/web"
+	"github.com/marcelofabianov/weather-server/internal/port"
+	"github.com/marcelofabianov/weather-server/pkg/web"
 )
 
 type WeatherHandler struct {

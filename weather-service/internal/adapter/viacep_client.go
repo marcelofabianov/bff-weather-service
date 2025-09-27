@@ -11,7 +11,7 @@ import (
 	"github.com/marcelofabianov/fault"
 	"github.com/sony/gobreaker"
 
-	"github.com/marcelofabianov/weather-api/config"
+	"github.com/marcelofabianov/weather-server/config"
 )
 
 type ViaCepResponse struct {

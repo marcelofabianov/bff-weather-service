@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/marcelofabianov/weather-api/config"
+	"github.com/marcelofabianov/weather-server/config"
 )
 
 func NewSlogLogger(cfg *config.LoggerConfig) *slog.Logger {

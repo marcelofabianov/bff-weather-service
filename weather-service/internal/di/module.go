@@ -8,13 +8,13 @@ import (
 	"github.com/sony/gobreaker"
 	"go.uber.org/fx"
 
-	"github.com/marcelofabianov/weather-api/config"
-	"github.com/marcelofabianov/weather-api/internal/adapter"
-	"github.com/marcelofabianov/weather-api/internal/handler"
-	"github.com/marcelofabianov/weather-api/internal/port"
-	"github.com/marcelofabianov/weather-api/internal/service"
-	"github.com/marcelofabianov/weather-api/pkg/logger"
-	"github.com/marcelofabianov/weather-api/pkg/web"
+	"github.com/marcelofabianov/weather-server/config"
+	"github.com/marcelofabianov/weather-server/internal/adapter"
+	"github.com/marcelofabianov/weather-server/internal/handler"
+	"github.com/marcelofabianov/weather-server/internal/port"
+	"github.com/marcelofabianov/weather-server/internal/service"
+	"github.com/marcelofabianov/weather-server/pkg/logger"
+	"github.com/marcelofabianov/weather-server/pkg/web"
 )
 
 var AppModule = fx.Options(

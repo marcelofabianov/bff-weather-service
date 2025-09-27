@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/httprate"
-	"github.com/marcelofabianov/weather-api/config"
+	"github.com/marcelofabianov/weather-server/config"
 )
 
 func NewServer(cfg *config.Config, logger *slog.Logger, router *chi.Mux) *http.Server {

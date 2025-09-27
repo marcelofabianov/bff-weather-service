@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/marcelofabianov/weather-api/internal/di"
+	"github.com/marcelofabianov/weather-server/internal/di"
 )
 
 func main() {

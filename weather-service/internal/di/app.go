@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/fx"
 
-	"github.com/marcelofabianov/weather-api/internal/handler"
+	"github.com/marcelofabianov/weather-server/internal/handler"
 )
 
 func NewApp() *fx.App {
