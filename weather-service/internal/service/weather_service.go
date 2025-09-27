@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/marcelofabianov/fault"
@@ -27,12 +28,12 @@ func NewWeatherService(viaCepClient port.ViaCepClient, weatherApiClient port.Wea
 	}
 }
 
-func (s *WeatherService) GetWeatherByZipcode(zipcode string) (*model.Weather, error) {
+func (s *WeatherService) GetWeatherByZipcode(ctx context.Context, zipcode string) (*model.Weather, error) {
 	if !s.isValidZipcode(zipcode) {
 		return nil, ErrInvalidZipcode
 	}
 
-	city, err := s.viaCepClient.GetLocation(zipcode)
+	city, err := s.viaCepClient.GetLocation(ctx, zipcode)
 	if err != nil {
 		if fault.IsNotFound(err) {
 			return nil, ErrZipcodeNotFound
@@ -40,7 +41,7 @@ func (s *WeatherService) GetWeatherByZipcode(zipcode string) (*model.Weather, er
 		return nil, err
 	}
 
-	tempC, err := s.weatherApiClient.GetTemperature(city)
+	tempC, err := s.weatherApiClient.GetTemperature(ctx, city)
 	if err != nil {
 		return nil, fault.Wrap(err, ErrWeatherNotFound.Message, fault.WithCode(ErrWeatherNotFound.Code))
 	}

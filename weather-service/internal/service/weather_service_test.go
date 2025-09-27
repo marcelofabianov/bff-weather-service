@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -13,8 +14,8 @@ type MockViaCepClient struct {
 	mock.Mock
 }
 
-func (m *MockViaCepClient) GetLocation(zipcode string) (string, error) {
-	args := m.Called(zipcode)
+func (m *MockViaCepClient) GetLocation(ctx context.Context, zipcode string) (string, error) {
+	args := m.Called(ctx, zipcode)
 	return args.String(0), args.Error(1)
 }
 
@@ -22,8 +23,8 @@ type MockWeatherApiClient struct {
 	mock.Mock
 }
 
-func (m *MockWeatherApiClient) GetTemperature(city string) (float64, error) {
-	args := m.Called(city)
+func (m *MockWeatherApiClient) GetTemperature(ctx context.Context, city string) (float64, error) {
+	args := m.Called(ctx, city)
 	return args.Get(0).(float64), args.Error(1)
 }
 
@@ -33,10 +34,10 @@ func TestWeatherService_GetWeatherByZipcode(t *testing.T) {
 	weatherService := NewWeatherService(mockViaCep, mockWeatherApi)
 
 	t.Run("should return weather on success", func(t *testing.T) {
-		mockViaCep.On("GetLocation", "74305460").Return("Goiânia", nil).Once()
-		mockWeatherApi.On("GetTemperature", "Goiânia").Return(25.0, nil).Once()
+		mockViaCep.On("GetLocation", mock.Anything, "74305460").Return("Goiânia", nil).Once()
+		mockWeatherApi.On("GetTemperature", mock.Anything, "Goiânia").Return(25.0, nil).Once()
 
-		weather, err := weatherService.GetWeatherByZipcode("74305460")
+		weather, err := weatherService.GetWeatherByZipcode(context.Background(), "74305460")
 
 		assert.NoError(t, err)
 		assert.NotNil(t, weather)
@@ -49,7 +50,7 @@ func TestWeatherService_GetWeatherByZipcode(t *testing.T) {
 	})
 
 	t.Run("should return error for invalid zipcode", func(t *testing.T) {
-		weather, err := weatherService.GetWeatherByZipcode("123")
+		weather, err := weatherService.GetWeatherByZipcode(context.Background(), "123")
 
 		assert.Nil(t, weather)
 		assert.Error(t, err)
@@ -58,9 +59,9 @@ func TestWeatherService_GetWeatherByZipcode(t *testing.T) {
 
 	t.Run("should return error when zipcode is not found", func(t *testing.T) {
 		notFoundErr := fault.New("not found", fault.WithCode(fault.NotFound))
-		mockViaCep.On("GetLocation", "00000000").Return("", notFoundErr).Once()
+		mockViaCep.On("GetLocation", mock.Anything, "00000000").Return("", notFoundErr).Once()
 
-		weather, err := weatherService.GetWeatherByZipcode("00000000")
+		weather, err := weatherService.GetWeatherByZipcode(context.Background(), "00000000")
 
 		assert.Nil(t, weather)
 		assert.Error(t, err)
@@ -69,10 +70,10 @@ func TestWeatherService_GetWeatherByZipcode(t *testing.T) {
 	})
 
 	t.Run("should return error when weather is not found for a valid city", func(t *testing.T) {
-		mockViaCep.On("GetLocation", "74305460").Return("Goiânia", nil).Once()
-		mockWeatherApi.On("GetTemperature", "Goiânia").Return(0.0, errors.New("weather api failed")).Once()
+		mockViaCep.On("GetLocation", mock.Anything, "74305460").Return("Goiânia", nil).Once()
+		mockWeatherApi.On("GetTemperature", mock.Anything, "Goiânia").Return(0.0, errors.New("weather api failed")).Once()
 
-		weather, err := weatherService.GetWeatherByZipcode("74305460")
+		weather, err := weatherService.GetWeatherByZipcode(context.Background(), "74305460")
 
 		assert.Nil(t, weather)
 		assert.Error(t, err)
