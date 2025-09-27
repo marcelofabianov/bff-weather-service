@@ -56,6 +56,15 @@ O projeto é totalmente orquestrado com Docker Compose, facilitando a inicializa
          http://localhost:8081/weather
     ```
 
+## 🛡️ Observabilidade com OpenTelemetry e Zipkin
+
+O sistema inclui suporte a tracing distribuído usando OpenTelemetry (OTEL) e Zipkin para monitorar o desempenho e o fluxo de requisições entre os serviços.
+
+- **Zipkin Dashboard**: Acesse o dashboard do Zipkin em `http://localhost:9411` para visualizar traces e spans.
+- **OpenTelemetry Collector**: O coletor (`otel-collector`) recebe traces dos serviços via OTLP (gRPC na porta `4317`) e os exporta para o Zipkin.
+
+Ao executar `docker compose up --build`, os serviços `zipkin` e `otel-collector` serão iniciados automaticamente junto com os microsserviços. Certifique-se de que as variáveis de ambiente relacionadas ao OTEL estejam configuradas nos arquivos `.env` dos serviços (detalhes nos READMEs individuais).
+
 ## 🛠️ Stack Tecnológica Comum
 
 Ambos os serviços foram construídos sobre uma base tecnológica comum, focada em boas práticas:
@@ -66,3 +75,6 @@ Ambos os serviços foram construídos sobre uma base tecnológica comum, focada 
 * **Roteamento HTTP**: `chi`
 * **Configuração**: `viper`
 * **Containerização**: Docker
+* **Observabilidade**: OpenTelemetry (OTEL) e Zipkin
+
+---
